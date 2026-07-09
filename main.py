@@ -1,21 +1,21 @@
-from kivymd.app import MDApp
+from kivy.core.window import Window
 from kivy.uix.screenmanager import Screen, ScreenManager
+from kivy.uix.scrollview import ScrollView
+from kivymd.app import MDApp
+from kivymd.uix.bottomsheet import MDBottomSheet
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import MDFillRoundFlatButton, MDIconButton, MDRoundFlatButton
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDRoundFlatButton, MDFillRoundFlatButton, MDIconButton
-from kivymd.uix.bottomsheet import MDBottomSheet
 from kivymd.uix.list import MDList, OneLineListItem
-from kivy.uix.scrollview import ScrollView
-from kivy.core.window import Window
 
 Window.size = (350, 550)
 
 
 class CalculatorScreen(Screen):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
         self.history_data = []
 
         main_layout = MDBoxLayout(
@@ -105,14 +105,7 @@ class CalculatorScreen(Screen):
         main_layout.add_widget(buttons_grid)
         self.add_widget(main_layout)
 
-        self.bottom_sheet = MDBottomSheet(size_hint_y=0.45)
-        self.bottom_sheet_layout = MDBoxLayout(orientation="vertical", padding="10dp")
-        self.scroll = ScrollView()
-        self.history_list = MDList()
-
-        self.scroll.add_widget(self.history_list)
-        self.bottom_sheet_layout.add_widget(self.scroll)
-        self.bottom_sheet.add_widget(self.bottom_sheet_layout)
+        self.bottom_sheet = None
 
     def press_button(self, button_instance):
         char = button_instance.text
@@ -151,16 +144,24 @@ class CalculatorScreen(Screen):
             self.display.text = "Error"
 
     def open_history(self, button_instance):
-        self.history_list.clear_widgets()
+        self.bottom_sheet = MDBottomSheet(size_hint_y=0.45)
+        bottom_sheet_layout = MDBoxLayout(orientation="vertical", padding="10dp")
+        scroll = ScrollView()
+        self.history_list = MDList()
 
         if not self.history_data:
-            self.history_list.add_widget(OneLineListItem(text="History is empty"))
+            self.history_list.add_widget(
+                OneLineListItem(text="History is empty")
+            )
         else:
             for operation in reversed(self.history_data):
                 item = OneLineListItem(text=operation)
                 item.bind(on_release=self.recover_result)
                 self.history_list.add_widget(item)
 
+        scroll.add_widget(self.history_list)
+        bottom_sheet_layout.add_widget(scroll)
+        self.bottom_sheet.add_widget(bottom_sheet_layout)
         self.bottom_sheet.open()
 
     def recover_result(self, item_instance):
@@ -170,10 +171,12 @@ class CalculatorScreen(Screen):
         except IndexError:
             pass
         finally:
-            self.bottom_sheet.dismiss()
+            if self.bottom_sheet:
+                self.bottom_sheet.dismiss()
 
 
 class CalculatorApp(MDApp):
+
     def build(self):
         self.theme_cls.theme_style = "Light"
         screen_manager = ScreenManager()
@@ -181,4 +184,5 @@ class CalculatorApp(MDApp):
         return screen_manager
 
 
-CalculatorApp().run()
+if __name__ == "__main__":
+    CalculatorApp().run()
